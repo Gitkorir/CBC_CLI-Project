@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String,DateTime,ForeignKey
+from sqlalchemy import Column, Integer, String,DateTime,ForeignKey,Float
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
 
@@ -18,7 +18,21 @@ class Sample(Base):
 
     def __repr__(self):
         return f"<Sample(id={self.id}, sample_id='{self.sample_id}', patient_name='{self.patient_name}')>"
-    
+
+class CBCResult(Base):
+    __tablename__ = 'cbc_results'
+
+    id = Column(Integer, primary_key=True)
+    sample_id = Column(Integer, ForeignKey('samples.id'))
+    test_name = Column(String, nullable=False)
+    value = Column(Float, nullable=False)
+    Units = Column(String, nullable=False)
+    normal_min = Column(Float, nullable=False)
+    normal_max = Column(Float, nullable=False)
+    flag = Column(String)  # 'Low', 'Normal', 'High'
+
+    sample = relationship("Sample", back_populates="cbc_results")
+
 class AnalysisLog(Base):
     __tablename__ = 'analysis_logs'
 
