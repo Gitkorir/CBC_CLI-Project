@@ -51,4 +51,7 @@ for test in cbc_tests:
 log = AnalysisLog(action = "Insert test CBC data", timestamp= datetime.utcnow())
 sample.logs.append(log)
 
-#
+#Commit 
+session.add(sample)
+session.commt()
+print("\u2705 Sample data inserted successfully!")
