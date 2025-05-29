@@ -26,12 +26,12 @@ class CBCResult(Base):
     sample_id = Column(Integer, ForeignKey('samples.id'))
     test_name = Column(String, nullable=False)
     value = Column(Float, nullable=False)
-    Units = Column(String, nullable=False)
+    Units = Column(String, nullable=True)
     normal_min = Column(Float, nullable=False)
     normal_max = Column(Float, nullable=False)
     flag = Column(String)  # 'Low', 'Normal', 'High'
 
-    sample = relationship("Sample", back_populates="cbc_results")
+    sample = relationship("Sample", back_populates="cbc_results", cascade="all, delete")
 
 class AnalysisLog(Base):
     __tablename__ = 'analysis_logs'

@@ -12,7 +12,7 @@ session = Session()
 sample = Sample(
     sample_id = "DG-001",
     patient_name = "Kasongo",
-    date_collection  = datetime.utcnow()
+    date_collected  = datetime.utcnow()
 )
 
 # Sample CBC results with normal ranges and values
@@ -53,5 +53,5 @@ sample.logs.append(log)
 
 #Commit 
 session.add(sample)
-session.commt()
+session.commit()
 print("\u2705 Sample data inserted successfully!")
