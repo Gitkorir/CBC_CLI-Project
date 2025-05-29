@@ -27,3 +27,28 @@ cbc_tests = [
     {"test_name": "MCHC(mean cell haemoglobin conc.)","Units":"g/dl", "value":33.6 , "normal_min": 32, "normal_max": 36}
 
 ]
+# Add a cbc result and determine flag
+
+for test in cbc_tests:
+    value = test["value"]
+    if value < test["normal_min"]:
+        flag = "Low"
+    elif value > test["normal_max"]:
+        flag = "High" 
+    else:
+        flag = "Normal"
+
+    result = CBCResult(
+        test_name =test["test_name"],
+        value= value,
+        normal_min = test["normal_min"],
+        normal_max = test["normal_max"],
+        flag = flag
+    )       
+    sample.cbc_results.append(result)
+
+# sample Add analysis
+log = AnalysisLog(action = "Insert test CBC data", timestamp= datetime.utcnow())
+sample.logs.append(log)
+
+#
