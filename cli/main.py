@@ -16,9 +16,8 @@ def list_samples():
         for sample in samples:
             click.echo(f"Sample ID: {sample.sample_id}, Patient: {sample.patient_name}, Collected: {sample.date_collected}")
 
-if __name__ == "__main__":
-    cli()
 
+@cli.command()
 def add_sample():
     """ Add a new CBC sample interactively."""
 
@@ -40,20 +39,14 @@ def add_sample():
         patient_name = patient_name,
         date_collected = datetime.utcnow()
     )
-     # Predefined test list
-    test_names = [
-        ("WBC", "x10^9/l", 4.0, 11.0),
-        ("RBC", "x10^12/l", 4.7, 6.1),
-        ("Hemoglobin", "g/dl", 13.0, 17.0),
-        ("Platelets", "x10^9/l", 150, 400),
-        ("Hematocrit", "percent", 44, 50),
-        ("MCV(mean cell volume)", "fl", 80, 100),
-        ("MCH(mean cell hemoglobin)", "pg", 27, 33),
-        ("MCHC(mean cell hemoglobin conc.)", "g/dl", 32, 36)
-    ]
-     # Collect test results interactively
-    for name, unit, normal_min, normal_max in test_names:
-        value = click.prompt(f"{name} ({unit})", type=float)
+    click.echo("📋 Enter CBC test results:")
+    while True:
+        test_name = click.prompt("Test Name")
+        value = float(click.prompt("Value"))
+        units = click.prompt("Units")
+        normal_min = float(click.prompt("Normal Range Min"))
+        normal_max = float(click.prompt("Normal Range Max"))
+
         if value < normal_min:
             flag = "Low"
         elif value > normal_max:
@@ -62,21 +55,24 @@ def add_sample():
             flag = "Normal"
 
         result = CBCResult(
-            test_name=name,
+            test_name=test_name,
             value=value,
-            Units=unit,
             normal_min=normal_min,
             normal_max=normal_max,
             flag=flag
         )
+
         sample.cbc_results.append(result)
 
-     # Add a log
-    log = AnalysisLog(action="Inserted CBC sample via CLI", timestamp=datetime.utcnow())
+        if not click.confirm("Add another test?"):
+            break
+
+    log = AnalysisLog(action="Manual sample entry", timestamp=datetime.utcnow())
     sample.logs.append(log)
 
-    # Save to DB
     session.add(sample)
     session.commit()
+    click.echo("'/u2705' New sample added successfully.")
 
-    click.echo("'\u2705'Sample added successfully.")
+if __name__ == "__main__":
+    cli()
