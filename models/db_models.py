@@ -45,3 +45,15 @@ class AnalysisLog(Base):
 
     def __repr__(self):
         return f"<AnalysisLog(action='{self.action}', timestamp={self.timestamp})>"    
+    
+class CBCTest(Base):
+    __tablename__ = 'cbctests'
+
+    id = Column(Integer, primary_key=True)
+    test_name = Column(String, unique=True, nullable=False)
+    units = Column(String, nullable=True)
+    normal_min = Column(Float, nullable=True)
+    normal_max = Column(Float, nullable=True)
+
+    def __repr__(self):
+        return f"<CBCTest(name={self.test_name}, units={self.units}, range={self.normal_min}-{self.normal_max})>"    

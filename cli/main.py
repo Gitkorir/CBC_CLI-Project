@@ -1,7 +1,8 @@
 # cli/main.py
 import click
 from database.db_session import session
-from models.db_models import Sample  # Make sure this matches your actual model name
+from models.db_models import Sample
+
 
 @click.group()
 def cli():
@@ -32,7 +33,7 @@ def view_sample(sample_id):
 
     click.echo("🧪 CBC Results:")
     for result in sample.cbc_results:
-        click.echo(f"- {result.test_name}: {result.value} {result.Units} "
+        click.echo(f"- {result.test_name}: {result.value} {result.units} "
                    f"(Normal: {result.normal_min}–{result.normal_max}) ➤ [{result.flag}]")
 
 
@@ -41,7 +42,8 @@ def add_sample():
     """ Add a new CBC sample interactively."""
     from utils.unit_map import UNIT_MAP
     from datetime import datetime
-    from models.db_models import Sample,CBCResult,AnalysisLog
+    from models.db_models import Sample,CBCResult,AnalysisLog,CBCTest
+
     from database.db_session import session
 
     #collect basic patient info
@@ -58,29 +60,40 @@ def add_sample():
         patient_name = patient_name,
         date_collected = datetime.utcnow()
     )
+    session.add(sample)
+
     click.echo("📋 Enter CBC test results:")
     while True:
         test_name = click.prompt("Test Name")
         value = float(click.prompt("Value"))
-        unit = UNIT_MAP.get(test_name, "unknown")
-        normal_min = float(click.prompt("Normal Range Min"))
-        normal_max = float(click.prompt("Normal Range Max"))
 
-        if value < normal_min:
-            flag = "Low"
-        elif value > normal_max:
-            flag = "High"
+        # Fetch reference data from CBCTest
+        cbctest = session.query(CBCTest).filter(CBCTest.test_name.ilike(test_name)).first()
+
+        if not cbctest:
+            click.echo(f"⚠️ No reference data found for '{test_name}'. Skipping.")
+            continue
+
+        if value < cbctest.normal_min:
+          flag = "Low"
+        elif value > cbctest.normal_max:
+          flag = "High"
         else:
-            flag = "Normal"
+         flag = "Normal"
+
+
+       
 
         result = CBCResult(
-            test_name=test_name,
+            test_name=test_name.upper(),
             value=value,
-            normal_min=normal_min,
-            normal_max=normal_max,
-            flag=flag,
-            units= unit 
+            units=cbctest.units,
+            normal_min=cbctest.normal_min,
+            normal_max=cbctest.normal_max,
+            sample=sample,
+            flag = flag
         )
+        session.add(result)
 
         sample.cbc_results.append(result)
 

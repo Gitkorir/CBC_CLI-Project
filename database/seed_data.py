@@ -1,13 +1,33 @@
 from sqlalchemy.orm import sessionmaker
-from models.db_models import Sample, CBCResult, AnalysisLog
+from models.db_models import Sample, CBCResult, AnalysisLog,CBCTest
 from database.setup import get_engine
 from datetime import datetime
+from models.db_models import CBCTest
 
 # Create a session
 engine = get_engine()
 Session = sessionmaker(bind=engine)
 session = Session()
 print("Engine URL:", engine.url)
+
+# Reference test data
+reference_tests = [
+    {"test_name": "WBC", "units": "x10^9/l", "normal_min": 4.0, "normal_max": 11.0},
+    {"test_name": "RBC", "units": "x10^12/l", "normal_min": 4.7, "normal_max": 6.1},
+    {"test_name": "Hemoglobin", "units": "g/dl", "normal_min": 13.0, "normal_max": 17.0},
+    {"test_name": "Platelets", "units": "x10^9/l", "normal_min": 150, "normal_max": 400},
+    {"test_name": "Hematocrit", "units": "percent", "normal_min": 44, "normal_max": 50},
+    {"test_name": "MCV", "units": "fl", "normal_min": 80, "normal_max": 100},
+    {"test_name": "MCH", "units": "pg", "normal_min": 27, "normal_max": 33},
+    {"test_name": "MCHC", "units": "g/dl", "normal_min": 32, "normal_max": 36}
+]
+
+for ref in reference_tests:
+    exists = session.query(CBCTest).filter_by(test_name=ref["test_name"]).first()
+    if not exists:
+        session.add(CBCTest(**ref))
+session.commit()
+print("✅ Reference CBC test data seeded.")
 
 
 # Check if the sample already exists
@@ -21,33 +41,40 @@ if not existing:
         date_collected=datetime.utcnow()
     )
 
-    # CBC results
-    cbc_tests = [
-        {"test_name": "WBC", "value": 3.2, "Units": "x10^9/l", "normal_min": 4.0, "normal_max": 11.0},
-        {"test_name": "RBC", "value": 5.1, "Units": "x10^12/l", "normal_min": 4.7, "normal_max": 6.1},
-        {"test_name": "Hemoglobin", "value": 14.5, "Units": "g/dl", "normal_min": 13.0, "normal_max": 17.0},
-        {"test_name": "Platelets", "value": 220, "Units": "x10^9/l", "normal_min": 150, "normal_max": 400},
-        {"test_name": "Hematocrit", "value": 44, "Units": "percent", "normal_min": 44, "normal_max": 50},
-        {"test_name": "MCV(mean cell volume)", "value": 88, "Units": "fl", "normal_min": 80, "normal_max": 100},
-        {"test_name": "MCH(mean cell haemologin)", "value": 29.6, "Units": "pg", "normal_min": 27, "normal_max": 33},
-        {"test_name": "MCHC(mean cell haemoglobin conc.)", "value": 33.6, "Units": "g/dl", "normal_min": 32, "normal_max": 36}
-    ]
+    # CBC results test-values
+    test_values = {
+    "WBC": 3.2,
+    "RBC": 5.1,
+    "Hemoglobin": 14.5,
+    "Platelets": 220,
+    "Hematocrit": 44,
+    "MCV": 88,
+    "MCH": 29.6,
+    "MCHC": 33.6
+}
+
+
 
     # Add CBC results and determine flags
-    for test in cbc_tests:
-        value = test["value"]
-        if value < test["normal_min"]:
+    for test_name, value in test_values.items():
+        ref = session.query(CBCTest).filter_by(test_name=test_name).first()
+        if not ref:
+            print(f"⚠️ Reference test for '{test_name}' not found. Skipping.")
+            continue
+
+        if value < ref.normal_min:
             flag = "Low"
-        elif value > test["normal_max"]:
+        elif value > ref.normal_max:
             flag = "High"
         else:
             flag = "Normal"
 
         result = CBCResult(
-            test_name=test["test_name"],
+            test_name=test_name,
             value=value,
-            normal_min=test["normal_min"],
-            normal_max=test["normal_max"],
+            units=ref.units,
+            normal_min=ref.normal_min,
+            normal_max=ref.normal_max,
             flag=flag
         )
         sample.cbc_results.append(result)
