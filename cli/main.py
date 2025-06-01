@@ -37,6 +37,27 @@ def view_sample(sample_id):
                    f"(Normal: {result.normal_min}–{result.normal_max}) ➤ [{result.flag}]")
 
 
+
+@cli.command()
+@click.option('--id', 'sample_id', prompt=True, help="Sample ID to delete")
+def delete_sample(sample_id):
+    """Delete a sample and its associated data."""
+    sample = session.query(Sample).filter_by(sample_id=sample_id).first()
+    if not sample:
+        click.echo(click.style(f"⚠️ Sample ID '{sample_id}' not found.", fg='red'))
+        return
+
+    confirm = click.confirm(click.style(f"Are you sure you want to delete Sample '{sample_id}'?", fg='yellow'))
+    if confirm:
+        session.delete(sample)
+        session.commit()
+        click.echo(click.style(f"✅ Sample '{sample_id}' deleted successfully.", fg='green'))
+    else:
+        click.echo(click.style("❌ Deletion cancelled.", fg='cyan'))
+
+
+
+
 @cli.command()
 def add_sample():
     """ Add a new CBC sample interactively."""
